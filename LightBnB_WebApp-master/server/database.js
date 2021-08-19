@@ -26,8 +26,8 @@ const getUserWithEmail = function(email) {
     .then((result) => {
       console.log('getUserWithEmail: ', result.rows);
       if (result.rows.length > 0) {
-        return Promise.resolve(result.rows[0]);
-      } else return Promise.resolve(null);
+        return result.rows[0];
+      } else null;
     })
     .catch((err) => console.log(err.message));
 };
@@ -47,8 +47,8 @@ const getUserWithId = function(id) {
     .then((result) => {
       console.log('getUserWithId: ', result.rows);
       if (result.rows.length > 0) {
-        return Promise.resolve(result.rows[0]);
-      } else return Promise.resolve(null);
+        return result.rows[0];
+      } else null;
     })
     .catch((err) => console.log(err.message));
 };
@@ -66,8 +66,8 @@ const addUser =  function(user) {
     .then((result) => {
       console.log('addUser: ', result.rows);
       if (result.rows.length > 0) {
-        return Promise.resolve(result.rows[0]);
-      } else return Promise.resolve(null);
+        return result.rows[0];
+      } else null;
     })
     .catch((err) => console.log(err.message));
 }
@@ -84,13 +84,15 @@ exports.addUser = addUser;
  */
 const getAllReservations = function(guest_id, limit = 10) {
   return pool.query(
-    `SELECT *
-      FROM properties AS p
-        JOIN reservations AS r ON r.property_id = p.id
+    `SELECT r.*, p.*, AVG(pr.rating) AS average_rating
+      FROM properties p
+        JOIN reservations r ON r.property_id = p.id
+        JOIN property_reviews pr ON p.id = pr.property_id
         WHERE r.guest_id = $1
-        LIMIT ${limit}`, [guest_id]
+        GROUP BY r.id, p.id
+        LIMIT $2`, [guest_id, limit]
   )
-    .then(result => Promise.resolve(result.rows))
+    .then(result => result.rows)
     .catch(e => console.log(e));
 };
 
@@ -124,22 +126,16 @@ const getAllProperties = function(options, limit = 10) {
   }
 
   if (options.minimum_price_per_night) {
-    console.log('min: ', options.minimum_price_per_night);
-    
     queryParams.push(`${options.minimum_price_per_night}`);
     queryFilters.push(`properties.cost_per_night/100 >= $${queryParams.length}`);
   }
 
   if (options.maximum_price_per_night) {
-    console.log('max: ', options.maximum_price_per_night);
-    
     queryParams.push(`${options.maximum_price_per_night}`);
     queryFilters.push(`properties.cost_per_night/100 <= $${queryParams.length}`);
   }
 
   if (options.minimum_rating) {
-    console.log('minimum_rating: ', options.minimum_rating);
-    
     queryParams.push(`${options.minimum_rating}`);
     queryFilters.push(`property_reviews.rating >= $${queryParams.length}`);
   }
@@ -147,7 +143,6 @@ const getAllProperties = function(options, limit = 10) {
   // concatenate filters
   if (queryFilters.length > 0) {
     queryString += 'WHERE ' + queryFilters.join(' AND ');
-    console.log('queryString: ', queryString);
   }
 
   queryParams.push(limit);
@@ -157,14 +152,10 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
   `;
 
-  console.log(queryString, queryParams);
-  
   return pool
     .query(queryString, queryParams)
-    .then((result) => {
-      return Promise.resolve(result.rows);
-    })
-    .catch((err) => console.log(err.message));
+    .then(result => result.rows)
+    .catch(err => console.log(err.message));
 };
 
 exports.getAllProperties = getAllProperties;
@@ -175,12 +166,22 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
+  // console.log('property obj', property);
   
-  return Promise.resolve(property);
-}
-;
+  const createParameterIds = property => {
+    return Object.keys(property).reduce((acc, e) => {
+      acc.push(`$${acc.length + 1}`);
+    
+      return acc;
+    }, []).join(',');
+  };
+  
+  return pool.query(
+    `INSERT INTO properties (${Object.keys(property).join(',')})
+      VALUES (${createParameterIds(property)})
+      RETURNING *`, [...Object.values(property)])
+    .then(result => result.rows)
+    .catch(e => console.log(e));
+};
 
 exports.addProperty = addProperty;

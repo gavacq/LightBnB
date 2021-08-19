@@ -1,15 +1,14 @@
 function getMyDetails() {
   console.log("getMyDetails");
-  return $.ajax({
-    url: "/users/me",
-  });
+  
+  return $.ajax({url: "/users/me", });
 }
 
 function logOut() {
   return $.ajax({
     method: "POST",
     url: "/users/logout",
-  })
+  });
 }
 
 function logIn(data) {
@@ -33,16 +32,14 @@ function getAllListings(params) {
   if (params) {
     url += "?" + params;
   }
-  return $.ajax({
-    url,
-  });
+  
+  return $.ajax({url, });
 }
 
 function getAllReservations() {
-  let url = "/api/reservations";
-  return $.ajax({
-    url,
-  });
+  const url = "/api/reservations";
+  
+  return $.ajax({url, });
 }
 
 const submitProperty = function(data) {
@@ -51,4 +48,4 @@ const submitProperty = function(data) {
     url: "/api/properties",
     data,
   });
-}
+};

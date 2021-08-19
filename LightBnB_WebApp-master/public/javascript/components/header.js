@@ -47,8 +47,11 @@ $(() => {
 
   $("header").on("click", '.my_reservations_button', function() {
     propertyListings.clearListings();
+    
     getAllReservations()
       .then(function(json) {
+        console.log('reservations onclick: ', json);
+        
         propertyListings.addProperties(json.reservations, true);
         views_manager.show('listings');
       })
