@@ -103,7 +103,9 @@ const getAllProperties = function(options, limit = 10) {
       `SELECT *
       FROM properties
       LIMIT $1`, [limit])
-    .then((result) => console.log('getAllProperties: ', result.rows))
+    .then((result) => {
+      return Promise.resolve(result.rows);
+    })
     .catch((err) => console.log(err.message));
 };
 

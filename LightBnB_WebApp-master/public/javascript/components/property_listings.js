@@ -1,5 +1,4 @@
 $(() => {
-
   const $propertyListings = $(`
   <section class="property-listings" id="property-listings">
       <p>Loading...</p>
@@ -12,9 +11,11 @@ $(() => {
   function addListing(listing) {
     $propertyListings.append(listing);
   }
+
   function clearListings() {
     $propertyListings.empty();
   }
+
   window.propertyListings.clearListings = clearListings;
 
   function addProperties(properties, isReservation = false) {
@@ -25,6 +26,6 @@ $(() => {
       addListing(listing);
     }
   }
-  window.propertyListings.addProperties = addProperties;
 
+  window.propertyListings.addProperties = addProperties;
 });
